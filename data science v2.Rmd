@@ -1,0 +1,207 @@
+---
+title: "Explorartory data analysis"
+output: html_notebook
+author: Abigail E. Page 
+date: 03/03/2022
+---
+
+Exploratory data analysis (EDA) uses summary statistics and data visualization methods to explore data sets. 
+
+Today we will: 
+
+1) Install the required packages and data 
+2) Look at this data and see what type of data is included (data type, NAs) 
+3) Look at some summary statistics of this data (mean, median, range)
+4) Visualise the relationship between two continuous (scatterplots)
+
+## 1.0 Set up
+
+```{r}
+# Run these to download and load required packages and datasets
+install.packages("palmerpenguins")
+install.packages("dplyr")
+install.packages("ggplot2")
+
+require(palmerpenguins)
+require(dplyr)
+require(ggplot2)
+```
+
+This has installed a data frame called *penguins*. 
+
+## 2.0 Looking at the data 
+
+You can look directly at the number of columns, their names, and number of rows in the data frame:  
+
+```{r}
+ncol(penguins) # this tells you how many columns the penguins data set has - 8
+names(penguins) # this tells you the names of the columns. In this case, the columns are the variables included in the penguins dataset
+nrow(penguins) # this tells you how many rows there are. In this case this is the total sample size
+```
+
+You can also get the information about columns using the head() function which shows you the first 6 items for any object
+
+```{r}
+head(penguins) 
+```   
+Here we can see there is some missing data, and 8 variables. There is 344 observations in this dataset. 
+
+R has several different data types. You can see these in the top of data frame above under the variable names, but you can also check the data type using the class() function. 
+
+Here the *object* is the variable which is specified after the $ sign. 
+
+```{r}
+class(penguins$species)
+class(penguins$sex)
+
+class(penguins$bill_length_mm)
+class(penguins$bill_depth_mm)
+
+```
+It is important to know what are the different data types because it impacts the types of operations you carry out. 
+
+## 3.0 Summary statistics
+
+Because bill_length/depth_mm are numeric, you can do things like calculate the mean and median 
+
+```{r}
+mean(penguins$bill_length_mm)  # the average value in the data set
+median(penguins$bill_length_mm) # the middle point in the data 
+
+```
+
+This argument is returning NAs, why? Remember we saw before the data frame had NAs? The issue is that we haven't told R how to deal with them, so we need to now include an additional term to do so:
+
+```{r}
+mean(penguins$bill_length_mm, na.rm = TRUE)  # the average value in the data set
+median(penguins$bill_length_mm, na.rm = TRUE) # the middle point in the data 
+
+```
+
+Rather than writing out all the different summary functions you can just use the function *summary* which gives you the min, median, mean and max values as well as the count of NAs: 
+
+```{r}
+summary(penguins$bill_length_mm, na.rm = TRUE)
+summary(penguins$bill_depth_mm, na.rm = TRUE)
+
+```
+
+Let's try getting summary stats for our factors. 
+
+Sex like species is a *factor*, not *numeric*, made up of two levels (males and females). You can't work out an mean/median for this type of binary data. Instead you can use the summary function which will give you a count of the sample size in each level: 
+
+```{r}
+summary(penguins$sex, na.rm = TRUE)
+summary(penguins$species, na.rm = TRUE)
+```
+
+We can produce these summary statistics by group using the aggregate function as it splits the data into the groupings you specify: 
+
+```{r}
+aggregate(bill_length_mm~species, data=penguins, mean) # so you are asking here for bill length by species from the 'penguins' data, and you are requesting the mean. 
+
+```
+ We can do the same for bill depth:
+
+```{r}
+aggregate(bill_depth_mm~species, data=penguins, mean) 
+```
+This makes me think it will be important to look at these traits by species as we move forward. 
+
+### 4.0 Visualisation of the peniguns dataset 
+So now let's move on to the visualising the relationship between two numeric data forms (bill length and depth) because we are interested in the correlations between different features of the beak. 
+
+Here we are going to introduce ggplot - the major plotting package in R. Building a plot is very easy as it is made up of different layers: 
+
+1) the function ggplot creates the coordinate system based on the data (x and y variables) you add layers to 
+2) the function geom_point tells R that the first layer is made up of data points which forms the scatter plot
+
+Let's give this a go now: 
+
+```{r}
+# Scatterplot using ggplot 
+
+ggplot(data = penguins, aes(x=bill_length_mm, y=bill_depth_mm)) + # specify the data, x axis and y axis (the aes() specify which variables to map to the x and y axes)
+  geom_point() # calls a scatterplot. 
+```
+Note we can see that R is just dropping (called listwise deleting) the NAs with the warning on top. 
+
+We can also add features to these geom_points, like colour or shape. You do this in the brackets following the geom_point, like this:
+
+```{r}
+ggplot(data = penguins, aes(x=bill_length_mm, y=bill_depth_mm)) + # specify the data, x axis and y axis 
+  geom_point(colour = "darkcyan") # points are now a colour I like! 
+```
+
+This is called changing the aesthetics, which are visual property of the objects in your plot - you can also change the shape (shape = 5) and the size (size = 2) of the points. Play around with the guides below! 
+There is an amazing range of colours you can use in r: see this file http://www.stat.columbia.edu/~tzheng/files/Rcolor.pdf 
+for names (replace the "darkcyan" above) and more info from http://www.cookbook-r.com/Graphs/Colors_(ggplot2)/ 
+
+R has 25 build in shapes which are identified by numbers. Shapes change, as do their colour and fill. See: http://www.cookbook-r.com/Graphs/Shapes_and_line_types/ 
+
+Ggplot2 is a lot about layering. You make a basic plot and then you add features to help you better understand it. So let's take this plot further. It looks like there is a negative relationship between bill depth and length, how can we explore this further? 
+
+
+### 4.1 Adding layers to your plot 
+
+Often scatter graphs come with lines to show the trends in the data. This can be done using a different *geom_function* - of which there are more than 40 different types.  
+
+To add a line to a your existing scatterplot you need to use geom_smooth(method = lm) for a linear regression line.
+
+```{r}
+  # add a line loess smooth line and 95% confidence intervals
+ggplot(data = penguins, aes(x=bill_length_mm, y=bill_depth_mm)) + # specify the data, x axis and y axis 
+  geom_point(colour = "darkcyan") + # so same as above but now ADD one more layer
+  geom_smooth(method = lm, colour = "darkcyan") # adds a linear regression line and I have also changed the colour
+```
+### 4.2 Adding aesthetics into the aes()
+
+To better visualise our data we can use aesthetics by adding a third variable to the mapping argument (the bit in the aes()). 
+
+```{r}
+ggplot(data = penguins, aes(x=bill_length_mm, y=bill_depth_mm, colour = species)) + # Now included a third term - colour = species 
+  geom_point() + # removed the colour here 
+  geom_smooth(method = lm) # and here 
+```
+### 4.3 Exercises 
+
+**A)** Plot the relationship between bill_length_mm and bill_depth_mm (as above) but this time map body mass on to colour. How do the aesthetics behaviour differently for a continuous variable? Write a one sentence summary of the plot.
+
+**B)** What is wrong with this code? Why are the points not pink?
+
+```{r}
+ggplot(data = penguins, aes(x=bill_length_mm, y=bill_depth_mm), colour = "pink") +
+  geom_point()
+```
+
+**C)** Make a scatterplot between bill_length_mm and Species. Does this still look like a Scatterplot. Try geom_boxplot. 
+
+**D)** What is wrong with the following code? Did you see the error message?
+```{r}
+ggplot(data = penguins, aes(x=bill_length_mm, y=bill_depth_mm))
++ geom_point()
+```
+
+
+### 4.4 Problem shoting 
+
+It is really common to run a line of code and it doesn't work. Normally it is a misplaced character, or an unclosed bracket. Check that every ( has a ) and every " has a ".  
+
+Capitals also matter in R.
+
+Sometimes you will run the code and nothing happens. Check the left-hand of your console: if its a +, it means that R doesn’t think you have typed a complete expression and its waiting for you to finish it. In this case, its usually easy to start from scratch again by pressing ESCAPE to abort processing the current command.
+
+One common problem when creating ggplot2 graphics is to put the + in the wrong place: it has to come at the end of the line, not the start. 
+
+If you’re still stuck, try the help. You can get help about any R function by running ?function_name in the console, or selecting the function name and pressing F1 in RStudio. Don’t worry if the help doesn’t seem that helpful - instead skip down to the examples and look for code that matches what you’re trying to do.
+
+If that doesn’t help, carefully read the error message. Sometimes the answer will be buried there! But when you’re new to R, the answer might be in the error message but you don’t yet know how to understand it. Another great tool is Google: try googling the error message, as it’s likely someone else has had the same problem, and has gotten help online.
+
+
+### 4.5 Resources 
+
+https://www.rstudio.com/resources/cheatsheets/ - cheatsheet for ggplot2 
+
+https://r4ds.had.co.nz/data-visualisation.html - R for Data Science 
+
+http://www.cookbook-r.com/Graphs/ - Cookbook for R Graphics 
